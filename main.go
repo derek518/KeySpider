@@ -8,6 +8,7 @@ import (
 	"github.com/hu17889/go_spider/core/pipeline"
 	"github.com/hu17889/go_spider/core/spider"
 	"math/big"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -70,6 +71,7 @@ func (this *EthKeyPageProcessor) Process(p *page.Page)  {
 		}
 		p.AddTargetRequest("https://keys.lol/ethereum/"+this.randStart.String(), "html")
 		this.randStart = *this.randStart.Add(&this.randStart, big.NewInt(1))
+		WritePageNumString(this.randStart.String())
 	} else {
 		fmt.Printf(p.GetBodyStr())
 
@@ -94,22 +96,71 @@ func (this *EthKeyPageProcessor) Process(p *page.Page)  {
 				}
 
 				p.AddField(account, keyPair.String())
+				WriteKeyPair(keyPair)
 			}
 		}
 	}
-
-
-
-
-
 }
 
 func (this *EthKeyPageProcessor) Finish() {
 	fmt.Printf("TODO:before end spider \r\n")
 }
 
+func ReadPageNumString() (string, error) {
+	file, err := os.OpenFile("/home/pageNum", os.O_RDONLY, 0777)
+	if err != nil {
+		return "", err
+	}
+
+	defer file.Close()
+
+	content := make([]byte, 128)
+	len, err := file.Read(content)
+	if len <=0 || err != nil {
+		return "", err
+	}
+
+	return string(content), nil
+}
+
+func WritePageNumString(pageNumStr string) error {
+	file, err := os.OpenFile("/home/pageNum", os.O_CREATE|os.O_WRONLY, 0777)
+	if err != nil {
+		return err
+	}
+
+	defer file.Close()
+
+	len, err := file.Write([]byte(pageNumStr))
+	if len <=0 || err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func WriteKeyPair(kp *KeyPair) error {
+	file, err := os.OpenFile("/home/keyBalances", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0777)
+	if err != nil {
+		return err
+	}
+
+	defer file.Close()
+
+	len, err := file.Write([]byte(kp.String()))
+	if len <=0 || err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func main()  {
-	randStart := math.MustParseBig256("851323952395684128749353686318515995900702548977766990970002456383535687986")
+	pageNumStr, err := ReadPageNumString()
+	if pageNumStr == "" || err != nil {
+		pageNumStr = "851323952395684128749353686318515995900702548977766990970002456383535687986"
+	}
+	randStart := math.MustParseBig256(pageNumStr)
 	spider.NewSpider(NewEthKeyPageProcessor(randStart), "EthKeySpider").
 		AddUrl("https://keys.lol/ethereum/"+randStart.String(), "html").
 		AddPipeline(pipeline.NewPipelineConsole()).                    // Print result on screen
