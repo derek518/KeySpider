@@ -104,10 +104,12 @@ func (this *EthKeyPageProcessor) Process(p *page.Page)  {
 
 func (this *EthKeyPageProcessor) Finish() {
 	fmt.Printf("TODO:before end spider \r\n")
+
+	startJob()
 }
 
 func ReadPageNumString() (string, error) {
-	file, err := os.OpenFile("/home/pageNum", os.O_RDONLY, 0777)
+	file, err := os.OpenFile("F:\\pageNum", os.O_RDONLY, 0777)
 	if err != nil {
 		return "", err
 	}
@@ -120,11 +122,11 @@ func ReadPageNumString() (string, error) {
 		return "", err
 	}
 
-	return string(content), nil
+	return string(content[0:len]), nil
 }
 
 func WritePageNumString(pageNumStr string) error {
-	file, err := os.OpenFile("/home/pageNum", os.O_CREATE|os.O_WRONLY, 0777)
+	file, err := os.OpenFile("F:\\pageNum", os.O_CREATE|os.O_WRONLY, 0777)
 	if err != nil {
 		return err
 	}
@@ -140,7 +142,7 @@ func WritePageNumString(pageNumStr string) error {
 }
 
 func WriteKeyPair(kp *KeyPair) error {
-	file, err := os.OpenFile("/home/keyBalances", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0777)
+	file, err := os.OpenFile("F:\\keyBalances", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0777)
 	if err != nil {
 		return err
 	}
@@ -155,10 +157,10 @@ func WriteKeyPair(kp *KeyPair) error {
 	return nil
 }
 
-func main()  {
+func startJob() {
 	pageNumStr, err := ReadPageNumString()
 	if pageNumStr == "" || err != nil {
-		pageNumStr = "851323952395684128749353686318515995900702548977766990970002456383535687986"
+		pageNumStr = "851323952395684128749353686318515995900702548977766990970002456383535687992"
 	}
 	randStart := math.MustParseBig256(pageNumStr)
 	spider.NewSpider(NewEthKeyPageProcessor(randStart), "EthKeySpider").
@@ -166,4 +168,8 @@ func main()  {
 		AddPipeline(pipeline.NewPipelineConsole()).                    // Print result on screen
 		SetThreadnum(3).                                               // Crawl request by three Coroutines
 		Run()
+}
+
+func main()  {
+	startJob()
 }
